@@ -1,0 +1,868 @@
+<title>Breach Sandbox</title>
+<style>
+/* Layout: marketing landing page (nav, hero, feature grid) wrapping an embedded terminal section */
+:root {
+  --bg: #05070a;
+  --bg-raised: #0a0f12;
+  --screen: #070b0f;
+  --fg: #e8fbf1;
+  --fg-dim: #2f8f68;
+  --term: #4dffb0;
+  --muted: #7d968b;
+  --accent: #5ad7ff;
+  --warn: #ffb454;
+  --danger: #ff5f56;
+  --border: #16231c;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { min-height: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: "JetBrains Mono", "Fira Code", ui-monospace, Menlo, Consolas, monospace;
+  line-height: 1.6;
+}
+a { color: var(--accent); }
+h1, h2, h3 { text-wrap: balance; }
+
+/* ---- nav ---- */
+header.site {
+  position: sticky;
+  top: env(safe-area-inset-top, 0px);
+  z-index: 20;
+  background: rgba(5, 7, 10, 0.85);
+  backdrop-filter: blur(6px);
+  border-bottom: 1px solid var(--border);
+}
+nav {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.01em;
+}
+.brand .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--term); box-shadow: 0 0 8px var(--term); }
+nav ul { display: flex; gap: 22px; list-style: none; margin: 0; padding: 0; }
+nav a { color: var(--muted); text-decoration: none; font-size: 13px; }
+nav a:hover { color: var(--term); }
+.nav-cta {
+  background: var(--term);
+  color: #05140d;
+  font-weight: 700;
+  font-size: 12.5px;
+  padding: 7px 14px;
+  border-radius: 6px;
+  text-decoration: none;
+}
+.nav-cta:hover { opacity: 0.9; }
+@media (max-width: 640px) { nav ul { display: none; } }
+
+/* ---- hero ---- */
+.hero {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 72px 20px 48px;
+  text-align: center;
+}
+.eyebrow {
+  display: inline-block;
+  color: var(--term);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  border: 1px solid var(--border);
+  background: var(--bg-raised);
+  padding: 5px 12px;
+  border-radius: 999px;
+  margin-bottom: 20px;
+}
+.hero h1 {
+  font-size: clamp(2rem, 5.5vw, 3.1rem);
+  margin: 0 0 14px;
+  line-height: 1.15;
+}
+.hero h1 .accent { color: var(--term); text-shadow: 0 0 20px rgba(77, 255, 176, 0.35); }
+.hero p.lead {
+  color: var(--muted);
+  font-size: 1.02rem;
+  max-width: 54ch;
+  margin: 0 auto 28px;
+  line-height: 1.7;
+}
+.hero-ctas { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.btn {
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  padding: 11px 22px;
+  border-radius: 7px;
+  text-decoration: none;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+.btn-primary { background: var(--term); color: #05140d; }
+.btn-primary:hover { opacity: 0.9; }
+.btn-ghost { background: transparent; color: var(--fg); border-color: var(--border); }
+.btn-ghost:hover { border-color: var(--term); color: var(--term); }
+
+.stat-row {
+  display: flex;
+  justify-content: center;
+  gap: 28px;
+  flex-wrap: wrap;
+  margin-top: 40px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.stat-row span b { display: block; color: var(--fg); font-size: 15px; font-weight: 700; }
+
+/* ---- terminal section ---- */
+section.term-section {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 24px 20px 64px;
+}
+.term-heading { text-align: center; margin-bottom: 24px; }
+.term-heading h2 { font-size: 1.5rem; margin: 0 0 8px; }
+.term-heading p { color: var(--muted); font-size: 0.92rem; margin: 0; }
+
+.crt {
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+#matrix-bg {
+  position: absolute;
+  inset: -20px;
+  width: calc(100% + 40px);
+  height: calc(100% + 40px);
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+  border-radius: 14px;
+}
+#matrix-bg.on { opacity: 0.3; }
+
+.terminal-shell {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 760px;
+  height: 540px;
+  display: flex;
+  flex-direction: column;
+  background: var(--screen);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 0 0 1px rgba(77, 255, 176, 0.04), 0 20px 60px rgba(0, 0, 0, 0.6), 0 0 40px rgba(77, 255, 176, 0.06);
+  overflow: hidden;
+}
+
+.titlebar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  background: #0a0f12;
+  border-bottom: 1px solid var(--border);
+  flex: 0 0 auto;
+}
+.dots { display: flex; gap: 7px; }
+.dots span { width: 11px; height: 11px; border-radius: 50%; display: block; background: #2a3530; }
+.dots span:nth-child(1) { background: #ff5f56; }
+.dots span:nth-child(2) { background: #ffbd2e; }
+.dots span:nth-child(3) { background: #27c93f; }
+.title {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+  color: var(--muted);
+  font-size: 12.5px;
+  letter-spacing: 0.03em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.reset-btn {
+  flex: 0 0 auto;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 11.5px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  letter-spacing: 0.02em;
+}
+.reset-btn:hover { color: var(--danger); border-color: var(--danger); }
+.reset-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.screen {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 14px 16px;
+  overflow: hidden;
+  font-size: 13.5px;
+}
+.screen::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0) 0px,
+    rgba(0, 0, 0, 0) 1px,
+    rgba(0, 0, 0, 0.18) 2px,
+    rgba(0, 0, 0, 0.18) 3px
+  );
+  mix-blend-mode: multiply;
+  opacity: 0.5;
+}
+
+#output {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.55;
+  color: var(--term);
+  text-shadow: 0 0 6px rgba(77, 255, 176, 0.35);
+  scrollbar-width: thin;
+  scrollbar-color: var(--fg-dim) transparent;
+}
+#output::-webkit-scrollbar { width: 8px; }
+#output::-webkit-scrollbar-thumb { background: var(--fg-dim); border-radius: 4px; }
+
+.line { margin: 0 0 2px; }
+.line.cmd { color: var(--term); }
+.line.cmd .p { color: var(--accent); }
+.line.out { color: var(--term); }
+.line.dim { color: var(--muted); }
+.line.warn { color: var(--warn); }
+.line.danger { color: var(--danger); }
+.line.accent { color: var(--accent); }
+.line.ok { color: #7bffb8; }
+
+.inputline {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border);
+}
+#prompt { color: var(--accent); white-space: nowrap; font-size: 13px; }
+#cmdInput {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: 0;
+  outline: 0;
+  color: var(--term);
+  font: inherit;
+  font-size: 13px;
+  text-shadow: 0 0 6px rgba(77, 255, 176, 0.35);
+  caret-color: var(--term);
+}
+#cmdInput::placeholder { color: var(--fg-dim); opacity: 0.6; }
+
+.footnote {
+  margin: 14px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
+}
+.footnote b { color: var(--fg-dim); }
+
+@keyframes flicker {
+  0%, 100% { opacity: 1; }
+  92% { opacity: 1; }
+  93% { opacity: 0.86; }
+  94% { opacity: 1; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .terminal-shell { animation: flicker 7s infinite; }
+}
+
+/* ---- features ---- */
+section.features {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 16px 20px 72px;
+}
+section.features h2 { text-align: center; font-size: 1.5rem; margin: 0 0 8px; }
+section.features > p { text-align: center; color: var(--muted); font-size: 0.92rem; margin: 0 0 32px; }
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+.card {
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+}
+.card .tag {
+  display: inline-block;
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  color: var(--term);
+  background: rgba(77, 255, 176, 0.08);
+  border: 1px solid rgba(77, 255, 176, 0.2);
+  padding: 3px 8px;
+  border-radius: 999px;
+  margin-bottom: 12px;
+}
+.card h3 { margin: 0 0 8px; font-size: 1rem; }
+.card p { margin: 0; color: var(--muted); font-size: 0.9rem; }
+.card code { color: var(--accent); background: rgba(90, 215, 255, 0.08); padding: 1px 5px; border-radius: 4px; font-size: 0.85em; }
+
+/* ---- footer ---- */
+footer.site {
+  border-top: 1px solid var(--border);
+  padding: 32px 20px calc(32px + env(safe-area-inset-bottom, 0px));
+}
+.footer-inner {
+  max-width: 1040px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.footer-inner a { color: var(--muted); text-decoration: none; }
+.footer-inner a:hover { color: var(--term); }
+
+@media (max-width: 480px) {
+  .hero { padding: 52px 16px 36px; }
+  .terminal-shell { height: 460px; }
+  .screen { font-size: 12.5px; padding: 12px; }
+}
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap">
+
+<header class="site">
+  <nav>
+    <div class="brand"><span class="dot"></span> breach_sandbox</div>
+    <ul>
+      <li><a href="#terminal">Terminal</a></li>
+      <li><a href="#features">How it works</a></li>
+      <li><a href="#get-code">Get the code</a></li>
+    </ul>
+    <a class="nav-cta" href="#terminal">Launch terminal →</a>
+  </nav>
+</header>
+
+<section class="hero">
+  <span class="eyebrow">SIMULATED · CLIENT-SIDE · NOTHING REAL</span>
+  <h1>Hack a system that <span class="accent">can't be broken.</span></h1>
+  <p class="lead">
+    Breach Sandbox is a fake machine in your browser — a filesystem to explore, a password to crack, a root
+    account to break into. It's all simulated, it all resets on reload, and there is nothing underneath it
+    to actually damage.
+  </p>
+  <div class="hero-ctas">
+    <a class="btn btn-primary" href="#terminal">Open the terminal</a>
+    <a class="btn btn-ghost" href="#features">See how it works</a>
+  </div>
+  <div class="stat-row">
+    <span><b>0</b>real systems touched</span>
+    <span><b>100%</b>runs in your browser</span>
+    <span><b>&lt;1s</b>full reset on reboot</span>
+  </div>
+</section>
+
+<section class="term-section" id="terminal">
+  <div class="term-heading">
+    <h2>Drop in. Type <code style="color:var(--accent)">help</code>.</h2>
+    <p>Everything below is live — this isn't a screenshot.</p>
+  </div>
+  <div class="crt">
+    <canvas id="matrix-bg"></canvas>
+    <div class="terminal-shell">
+      <div class="titlebar">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <div class="title" id="titleText">guest@sandbox: ~</div>
+        <button id="resetBtn" class="reset-btn" type="button">⟲ reboot</button>
+      </div>
+      <div class="screen" id="screenWrap">
+        <div id="output" aria-live="polite"></div>
+        <div class="inputline">
+          <span id="prompt">guest@sandbox:~$</span>
+          <input id="cmdInput" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="type 'help'" aria-label="Terminal command input" />
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="footnote">Simulated sandbox — <b>nothing here touches a real system.</b> Reload or hit reboot to wipe it back to a clean boot.</p>
+</section>
+
+<section class="features" id="features">
+  <h2>What's actually in the box</h2>
+  <p>Four stages, one goal: get root, decrypt the flag.</p>
+  <div class="grid">
+    <div class="card">
+      <span class="tag">RECON</span>
+      <h3>Scan &amp; explore</h3>
+      <p>Walk the filesystem with <code>ls</code> / <code>cd</code> / <code>cat</code>, then <code>scan</code> the network to find the target host.</p>
+    </div>
+    <div class="card">
+      <span class="tag">CRACK</span>
+      <h3>Brute-force the vault</h3>
+      <p><code>crack /root/shadow.enc</code> runs a live brute-force animation that locks in the passphrase character by character.</p>
+    </div>
+    <div class="card">
+      <span class="tag">ESCALATE</span>
+      <h3>Get root</h3>
+      <p>Use the recovered passphrase with <code>sudo su</code> to unlock the protected <code>/root</code> directory.</p>
+    </div>
+    <div class="card">
+      <span class="tag">SAFETY</span>
+      <h3>Nothing persists</h3>
+      <p>State lives only in memory — no storage, no backend. <code>reboot</code>, or just close the tab, and it's a clean machine again.</p>
+    </div>
+  </div>
+</section>
+
+<footer class="site" id="get-code">
+  <div class="footer-inner">
+    <span>Breach Sandbox — a simulated terminal toy. For fun and learning, not a real exploit tool.</span>
+    <span>Built as a single static HTML page.</span>
+  </div>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+
+  var outputEl = document.getElementById("output");
+  var inputEl = document.getElementById("cmdInput");
+  var promptEl = document.getElementById("prompt");
+  var titleEl = document.getElementById("titleText");
+  var resetBtn = document.getElementById("resetBtn");
+  var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  function freshState() {
+    return {
+      user: "guest",
+      sudo: false,
+      cwd: "/home/guest",
+      scanned: false,
+      cracking: false,
+      cracked: false,
+      decrypted: false,
+      history: [],
+      histPos: 0,
+      matrix: false
+    };
+  }
+  var state = freshState();
+
+  function freshFs() {
+    return {
+      "/home/guest": {
+        type: "dir",
+        children: ["readme.txt", "notes.txt", "toolkit/"]
+      },
+      "/home/guest/readme.txt": {
+        type: "file",
+        locked: false,
+        content:
+          "Welcome, guest.\n\nThis box is a sandbox terminal — a toy, not a real machine.\nTry: ls, cat notes.txt, scan, sudo su\n\nEverything you do here lives in memory only.\nClose the tab, reload, or hit reboot and it's gone. No harm possible."
+      },
+      "/home/guest/notes.txt": {
+        type: "file",
+        locked: false,
+        content:
+          "to-self: the /root vault is locked.\nheard the passphrase hash is sitting in /root/shadow.enc\nmaybe 'scan' the network first, then try cracking it."
+      },
+      "/home/guest/toolkit/": {
+        type: "dir",
+        children: ["cracker.bin"]
+      },
+      "/home/guest/toolkit/cracker.bin": {
+        type: "file",
+        locked: false,
+        content: "[binary] a brute-force helper. usage: crack <file>"
+      },
+      "/root": {
+        type: "dir",
+        protected: true,
+        children: ["shadow.enc", "flag.txt"]
+      },
+      "/root/shadow.enc": {
+        type: "file",
+        protected: true,
+        content: "ENCRYPTED — run: crack /root/shadow.enc"
+      },
+      "/root/flag.txt": {
+        type: "file",
+        protected: true,
+        encrypted: true,
+        content: "SANDBOX{nice_work_you_cracked_it}\n\nThat's the whole game. Nothing was ever real — reboot to play again."
+      }
+    };
+  }
+  var fs = freshFs();
+
+  function print(html, cls) {
+    var div = document.createElement("div");
+    div.className = "line" + (cls ? " " + cls : "");
+    div.innerHTML = html;
+    outputEl.appendChild(div);
+    outputEl.scrollTop = outputEl.scrollHeight;
+    return div;
+  }
+
+  function printText(text, cls) {
+    text.split("\n").forEach(function (line) {
+      print(escapeHtml(line) || "&nbsp;", cls);
+    });
+  }
+
+  function promptStr() {
+    var u = state.sudo ? "root" : state.user;
+    var short = state.cwd.replace("/home/guest", "~");
+    return u + "@sandbox:" + short + (state.sudo ? "#" : "$");
+  }
+
+  function refreshPrompt() {
+    promptEl.textContent = promptStr();
+    titleEl.textContent = (state.sudo ? "root" : "guest") + "@sandbox: " + state.cwd.replace("/home/guest", "~");
+  }
+
+  function sleep(ms) {
+    return new Promise(function (res) { setTimeout(res, reduceMotion ? 0 : ms); });
+  }
+
+  // ---- matrix background ----
+  var canvas = document.getElementById("matrix-bg");
+  var ctx = canvas.getContext("2d");
+  var matrixTimer = null;
+  function sizeCanvas() {
+    canvas.width = canvas.clientWidth;
+    canvas.height = canvas.clientHeight;
+  }
+  function startMatrix() {
+    if (reduceMotion) return;
+    sizeCanvas();
+    canvas.classList.add("on");
+    var cols = Math.floor(canvas.width / 16);
+    var drops = new Array(cols).fill(0);
+    var chars = "01アイウエオカキクケコサシスセソ";
+    matrixTimer = setInterval(function () {
+      ctx.fillStyle = "rgba(5,7,10,0.18)";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "#2f8f68";
+      ctx.font = "14px monospace";
+      for (var i = 0; i < drops.length; i++) {
+        var ch = chars[Math.floor(Math.random() * chars.length)];
+        ctx.fillText(ch, i * 16, drops[i] * 16);
+        if (drops[i] * 16 > canvas.height && Math.random() > 0.975) drops[i] = 0;
+        drops[i]++;
+      }
+    }, 60);
+  }
+  function stopMatrix() {
+    canvas.classList.remove("on");
+    if (matrixTimer) { clearInterval(matrixTimer); matrixTimer = null; }
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+  window.addEventListener("resize", function () { if (state.matrix) sizeCanvas(); });
+
+  // ---- filesystem helpers ----
+  function resolvePath(arg) {
+    if (!arg) return state.cwd;
+    if (arg === "..") {
+      var parts = state.cwd.split("/").filter(Boolean);
+      parts.pop();
+      return "/" + parts.join("/") || "/";
+    }
+    if (arg.startsWith("/")) return arg.replace(/\/$/, "") || "/";
+    return (state.cwd.replace(/\/$/, "") + "/" + arg).replace(/\/$/, "");
+  }
+
+  function lookup(path) {
+    if (fs[path]) return fs[path];
+    if (fs[path + "/"]) return fs[path + "/"];
+    return null;
+  }
+
+  // ---- commands ----
+  var commands = {
+    help: function () {
+      printText(
+        "available commands:\n" +
+        "  help              show this list\n" +
+        "  ls [path]         list directory contents\n" +
+        "  cd <path>         change directory\n" +
+        "  cat <file>        read a file\n" +
+        "  whoami            show current user\n" +
+        "  scan              scan the local network\n" +
+        "  sudo su           attempt to elevate to root\n" +
+        "  crack <file>      brute-force an encrypted file\n" +
+        "  decrypt <file>    decrypt a cracked vault file\n" +
+        "  matrix            toggle the background rain\n" +
+        "  history           show command history\n" +
+        "  clear             clear the screen\n" +
+        "  reboot            wipe state and restart the sandbox",
+        "dim"
+      );
+    },
+    whoami: function () {
+      printText(state.sudo ? "root" : "guest");
+    },
+    ls: function (args) {
+      var path = resolvePath(args[0]);
+      var node = lookup(path);
+      if (!node || node.type !== "dir") { printText(path + ": not a directory", "danger"); return; }
+      if (node.protected && !state.sudo) {
+        printText("ls: cannot open " + path + ": Permission denied", "danger");
+        printText("hint: this vault needs root. try 'sudo su'.", "dim");
+        return;
+      }
+      if (!node.children.length) { printText("(empty)", "dim"); return; }
+      printText(node.children.join("   "), "accent");
+    },
+    cd: function (args) {
+      if (!args[0]) { state.cwd = "/home/guest"; refreshPrompt(); return; }
+      var path = resolvePath(args[0]);
+      var node = lookup(path);
+      if (!node || node.type !== "dir") { printText(path + ": No such directory", "danger"); return; }
+      if (node.protected && !state.sudo) {
+        printText("cd: " + path + ": Permission denied", "danger");
+        return;
+      }
+      state.cwd = path;
+      refreshPrompt();
+    },
+    cat: async function (args) {
+      if (!args[0]) { printText("usage: cat <file>", "dim"); return; }
+      var path = resolvePath(args[0]);
+      var node = lookup(path);
+      if (!node || node.type !== "file") { printText(path + ": No such file", "danger"); return; }
+      if (node.protected && !state.sudo) {
+        printText("cat: " + path + ": Permission denied", "danger");
+        return;
+      }
+      if (node.encrypted && !state.decrypted) {
+        printText(node.content.split("\n")[0] || "[encrypted]", "warn");
+        return;
+      }
+      printText(node.content, "out");
+    },
+    scan: async function () {
+      printText("scanning local network...", "dim");
+      var hosts = ["10.0.0.4   workstation   [closed]", "10.0.0.7   printer        [closed]", "10.0.0.12  sandbox-core   [open: 22, 443]"];
+      for (var i = 0; i < hosts.length; i++) {
+        await sleep(280);
+        printText("  " + hosts[i], "dim");
+      }
+      await sleep(200);
+      printText("scan complete. sandbox-core is reachable.", "accent");
+      printText("hint: /root/shadow.enc on sandbox-core looks interesting.", "dim");
+      state.scanned = true;
+    },
+    sudo: async function (args) {
+      if (args.join(" ") !== "su") { printText("usage: sudo su", "dim"); return; }
+      if (state.sudo) { printText("already root.", "dim"); return; }
+      if (!state.cracked) {
+        printText("root account is locked behind an encrypted passphrase.", "warn");
+        printText("try: crack /root/shadow.enc", "dim");
+        return;
+      }
+      printText("elevating privileges...", "dim");
+      await sleep(400);
+      state.sudo = true;
+      refreshPrompt();
+      printText("access granted. you are now root.", "ok");
+    },
+    crack: async function (args) {
+      var target = args[0] ? resolvePath(args[0]) : "/root/shadow.enc";
+      if (target !== "/root/shadow.enc") {
+        printText("nothing to crack at " + target, "dim");
+        return;
+      }
+      if (state.cracked) { printText("already cracked — passphrase known.", "dim"); return; }
+      if (state.cracking) { printText("a crack is already running.", "dim"); return; }
+      state.cracking = true;
+      printText("loading toolkit/cracker.bin...", "dim");
+      await sleep(300);
+      printText("brute-forcing /root/shadow.enc", "dim");
+
+      var secret = "R00T-ACC3SS";
+      var chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+      var revealed = new Array(secret.length).fill(null);
+      var line = print("", "accent");
+      var steps = reduceMotion ? 1 : 26;
+
+      for (var step = 0; step < steps; step++) {
+        var lockThrough = Math.floor((step / (steps - 1)) * secret.length);
+        var display = "";
+        for (var i = 0; i < secret.length; i++) {
+          if (i < lockThrough || reduceMotion) {
+            revealed[i] = secret[i];
+            display += secret[i];
+          } else {
+            display += chars[Math.floor(Math.random() * chars.length)];
+          }
+        }
+        line.textContent = "[" + display + "]  " + Math.round((lockThrough / secret.length) * 100) + "%";
+        await sleep(55);
+      }
+      line.textContent = "[" + secret + "]  100%";
+      await sleep(200);
+      printText("passphrase recovered: " + secret, "ok");
+      printText("you can now: sudo su", "dim");
+      state.cracked = true;
+      state.cracking = false;
+    },
+    decrypt: async function (args) {
+      var target = args[0] ? resolvePath(args[0]) : "/root/flag.txt";
+      if (!state.sudo) { printText("decrypt: Permission denied (need root)", "danger"); return; }
+      if (target !== "/root/flag.txt") { printText("nothing to decrypt at " + target, "dim"); return; }
+      if (state.decrypted) { printText("already decrypted.", "dim"); return; }
+      printText("decrypting /root/flag.txt...", "dim");
+      await sleep(500);
+      state.decrypted = true;
+      printText(fs["/root/flag.txt"].content, "ok");
+    },
+    matrix: function () {
+      state.matrix = !state.matrix;
+      if (state.matrix) { startMatrix(); printText("background rain: on", "dim"); }
+      else { stopMatrix(); printText("background rain: off", "dim"); }
+    },
+    history: function () {
+      if (!state.history.length) { printText("(no history yet)", "dim"); return; }
+      state.history.forEach(function (h, i) { printText((i + 1) + "  " + h, "dim"); });
+    },
+    clear: function () {
+      outputEl.innerHTML = "";
+    },
+    reboot: async function () {
+      await doReboot();
+    }
+  };
+
+  async function doReboot() {
+    inputEl.disabled = true;
+    printText("", "dim");
+    printText("system reboot requested...", "warn");
+    var msgs = ["flushing memory", "wiping filesystem", "restoring clean snapshot", "cold boot"];
+    for (var i = 0; i < msgs.length; i++) {
+      await sleep(260);
+      printText(msgs[i] + "...", "dim");
+    }
+    await sleep(300);
+    stopMatrix();
+    state = freshState();
+    fs = freshFs();
+    outputEl.innerHTML = "";
+    refreshPrompt();
+    inputEl.disabled = false;
+    await boot(true);
+  }
+
+  async function runCommand(raw) {
+    var trimmed = raw.trim();
+    if (!trimmed) return;
+    state.history.push(trimmed);
+    state.histPos = state.history.length;
+    var parts = trimmed.split(/\s+/);
+    var name = parts[0].toLowerCase();
+    var args = parts.slice(1);
+    if (commands[name]) {
+      try { await commands[name](args); }
+      catch (e) { printText("error: " + e.message, "danger"); }
+    } else {
+      printText(name + ": command not found. try 'help'.", "danger");
+    }
+  }
+
+  inputEl.addEventListener("keydown", async function (e) {
+    if (e.key === "Enter") {
+      var val = inputEl.value;
+      print('<span class="p">' + escapeHtml(promptStr()) + "</span> " + escapeHtml(val), "cmd");
+      inputEl.value = "";
+      inputEl.disabled = true;
+      await runCommand(val);
+      inputEl.disabled = false;
+      inputEl.focus();
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      if (state.histPos > 0) { state.histPos--; inputEl.value = state.history[state.histPos] || ""; }
+    } else if (e.key === "ArrowDown") {
+      e.preventDefault();
+      if (state.histPos < state.history.length) {
+        state.histPos++;
+        inputEl.value = state.history[state.histPos] || "";
+      }
+    } else if (e.key === "Tab") {
+      e.preventDefault();
+      var names = Object.keys(commands);
+      var cur = inputEl.value.toLowerCase();
+      var match = names.find(function (n) { return n.indexOf(cur) === 0 && cur.length; });
+      if (match) inputEl.value = match;
+    }
+  });
+
+  document.getElementById("screenWrap").addEventListener("click", function () {
+    inputEl.focus();
+  });
+  resetBtn.addEventListener("click", function () { doReboot(); });
+
+  var ascii =
+    "   ____  _____  _____   _____  ____  _    _ \n" +
+    "  |  _ \\|  __ \\|  ___| / ____|/ __ \\| |  | |\n" +
+    "  | |_) | |__) | |__  | (___ | |  | | |__| |\n" +
+    "  |  _ <|  _  /|  __|  \\___ \\| |  | |  __  |\n" +
+    "  | |_) | | \\ \\| |___  ____) | |__| | |  | |\n" +
+    "  |____/|_|  \\_\\_____||_____/ \\____/|_|  |_|";
+
+  async function boot(isReboot) {
+    refreshPrompt();
+    print('<pre style="margin:0 0 6px;color:var(--fg-dim);font-size:11px;line-height:1.2">' + escapeHtml(ascii) + "</pre>");
+    var lines = isReboot
+      ? ["cold boot complete.", "filesystem restored to a clean snapshot.", ""]
+      : ["BREACH SANDBOX v1.0 — simulated training terminal", "no real systems are reachable from here.", ""];
+    for (var i = 0; i < lines.length; i++) {
+      if (lines[i] === "") { print("&nbsp;"); continue; }
+      printText(lines[i], "dim");
+      await sleep(120);
+    }
+    printText("type 'help' to see what you can do.", "accent");
+    inputEl.focus();
+  }
+
+  boot(false);
+})();
+</script>
